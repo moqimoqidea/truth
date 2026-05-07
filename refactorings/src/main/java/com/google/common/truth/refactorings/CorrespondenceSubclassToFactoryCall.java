@@ -82,6 +82,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.Modifier;
 import org.jspecify.annotations.Nullable;
 
@@ -91,7 +92,6 @@ import org.jspecify.annotations.Nullable;
  * and used.
  */
 @BugPattern(
-    name = "CorrespondenceSubclassToFactoryCall",
     summary = "Use the factory methods on Correspondence instead of defining a subclass.",
     severity = SUGGESTION)
 public final class CorrespondenceSubclassToFactoryCall extends BugChecker
@@ -274,7 +274,7 @@ public final class CorrespondenceSubclassToFactoryCall extends BugChecker
         tree.getMembers().stream()
             .filter(t -> t instanceof MethodTree)
             .map(t -> (MethodTree) t)
-            .filter(t -> t.getName().contentEquals("<init>"))
+            .filter(t -> getSymbol(t).getKind() == ElementKind.CONSTRUCTOR)
             .findAny()
             .get();
     // We don't include the ModifiersTree directly in case it contains any annotations.
@@ -638,7 +638,7 @@ public final class CorrespondenceSubclassToFactoryCall extends BugChecker
       }
       MethodSymbol methodSymbol = (MethodSymbol) symbol;
 
-      if (methodSymbol.getSimpleName().contentEquals("<init>")) {
+      if (methodSymbol.getKind() == ElementKind.CONSTRUCTOR) {
         return CONSTRUCTOR;
       } else if (overrides(methodSymbol, CORRESPONDENCE_CLASS, "compare", state)) {
         return COMPARE_METHOD;
