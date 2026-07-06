@@ -152,6 +152,26 @@ public class PrimitiveFloatArraySubjectTest {
   }
 
   @Test
+  public void isEmpty_emptyArray_success() {
+    assertThat(array()).isEmpty();
+  }
+
+  @Test
+  public void isEmpty_nonEmptyArray_failure() {
+    expectFailure(whenTesting -> whenTesting.that(array(1.0f)).isEmpty());
+  }
+
+  @Test
+  public void isNotEmpty_nonEmptyArray_success() {
+    assertThat(array(1.0f)).isNotEmpty();
+  }
+
+  @Test
+  public void isNotEmpty_emptyArray_failure() {
+    expectFailure(whenTesting -> whenTesting.that(array()).isNotEmpty());
+  }
+
+  @Test
   public void usingTolerance_contains_success() {
     assertThat(array(1.1f, TOLERABLE_2POINT2, 3.2f))
         .usingTolerance(DEFAULT_TOLERANCE)
@@ -181,6 +201,12 @@ public class PrimitiveFloatArraySubjectTest {
             + (double) DEFAULT_TOLERANCE
             + " of expected element");
     assertFailureValue(e, "but was", "[" + 1.1f + ", " + INTOLERABLE_2POINT2 + ", " + 3.3f + "]");
+  }
+
+  @Test
+  public void usingTolerance_nullArray_failure() {
+    expectFailure(
+        whenTesting -> whenTesting.that((float[]) null).usingTolerance(0.001).contains(1.0f));
   }
 
   @Test
@@ -280,7 +306,7 @@ public class PrimitiveFloatArraySubjectTest {
             IllegalArgumentException.class,
             () ->
                 assertThat(array(1.0f, 2.0f, 3.0f))
-                    .usingTolerance(-1.0f * DEFAULT_TOLERANCE)
+                    .usingTolerance(-DEFAULT_TOLERANCE)
                     .contains(2.0f));
     assertThat(expected)
         .hasMessageThat()
@@ -463,6 +489,12 @@ public class PrimitiveFloatArraySubjectTest {
   }
 
   @Test
+  public void usingExactEquality_nullArray_failure() {
+    expectFailure(
+        whenTesting -> whenTesting.that((float[]) null).usingExactEquality().contains(1.0f));
+  }
+
+  @Test
   public void usingExactEquality_contains_otherTypes() {
     // Expected value is Integer - supported up to +/- 2^24
     assertThat(array(1.0f, 2.0f, 3.0f)).usingExactEquality().contains(2);
@@ -505,6 +537,30 @@ public class PrimitiveFloatArraySubjectTest {
   }
 
   @Test
+  public void usingExactEquality_contains_otherTypes_negativeIntOutOfRange() {
+    int expected = -(1 << 24) - 1;
+    float[] actual = array(1.0f, 2.0f, 3.0f);
+    AssertionError e =
+        expectFailure(
+            whenTesting -> whenTesting.that(actual).usingExactEquality().contains(expected));
+    assertThat(e)
+        .factValue("first exception")
+        .startsWith(
+            "compare("
+                + actual[0]
+                + ", "
+                + expected
+                + ") threw java.lang.IllegalArgumentException");
+    assertThat(e)
+        .factValue("first exception")
+        .contains(
+            "Expected value "
+                + expected
+                + " in assertion using exact float equality was an int with an absolute value "
+                + "greater than 2^24 which has no exact float representation");
+  }
+
+  @Test
   public void usingExactEquality_contains_otherTypes_longOutOfRange() {
     long expected = (1L << 24) + 1L;
     float[] actual = array(1.0f, 2.0f, 3.0f);
@@ -520,6 +576,30 @@ public class PrimitiveFloatArraySubjectTest {
         "additionally, one or more exceptions were thrown while comparing elements",
         "first exception");
     assertFailureValue(e, "expected to contain", Long.toString(expected));
+    assertThat(e)
+        .factValue("first exception")
+        .startsWith(
+            "compare("
+                + actual[0]
+                + ", "
+                + expected
+                + ") threw java.lang.IllegalArgumentException");
+    assertThat(e)
+        .factValue("first exception")
+        .contains(
+            "Expected value "
+                + expected
+                + " in assertion using exact float equality was a long with an absolute value "
+                + "greater than 2^24 which has no exact float representation");
+  }
+
+  @Test
+  public void usingExactEquality_contains_otherTypes_negativeLongOutOfRange() {
+    long expected = -(1L << 24) - 1L;
+    float[] actual = array(1.0f, 2.0f, 3.0f);
+    AssertionError e =
+        expectFailure(
+            whenTesting -> whenTesting.that(actual).usingExactEquality().contains(expected));
     assertThat(e)
         .factValue("first exception")
         .startsWith(
@@ -832,85 +912,5 @@ public class PrimitiveFloatArraySubjectTest {
 
   private static float[] array(float... primitives) {
     return primitives;
-  }
-
-  @Test
-  public void isEmpty_emptyArray_success() {
-    assertThat(array()).isEmpty();
-  }
-
-  @Test
-  public void isEmpty_nonEmptyArray_failure() {
-    expectFailure(whenTesting -> whenTesting.that(array(1.0f)).isEmpty());
-  }
-
-  @Test
-  public void isNotEmpty_nonEmptyArray_success() {
-    assertThat(array(1.0f)).isNotEmpty();
-  }
-
-  @Test
-  public void isNotEmpty_emptyArray_failure() {
-    expectFailure(whenTesting -> whenTesting.that(array()).isNotEmpty());
-  }
-
-  @Test
-  public void usingExactEquality_nullArray_failure() {
-    expectFailure(
-        whenTesting -> whenTesting.that((float[]) null).usingExactEquality().contains(1.0f));
-  }
-
-  @Test
-  public void usingTolerance_nullArray_failure() {
-    expectFailure(
-        whenTesting -> whenTesting.that((float[]) null).usingTolerance(0.001).contains(1.0f));
-  }
-
-  @Test
-  public void usingExactEquality_contains_otherTypes_negativeIntOutOfRange() {
-    int expected = -(1 << 24) - 1;
-    float[] actual = array(1.0f, 2.0f, 3.0f);
-    AssertionError e =
-        expectFailure(
-            whenTesting -> whenTesting.that(actual).usingExactEquality().contains(expected));
-    assertThat(e)
-        .factValue("first exception")
-        .startsWith(
-            "compare("
-                + actual[0]
-                + ", "
-                + expected
-                + ") threw java.lang.IllegalArgumentException");
-    assertThat(e)
-        .factValue("first exception")
-        .contains(
-            "Expected value "
-                + expected
-                + " in assertion using exact float equality was an int with an absolute value "
-                + "greater than 2^24 which has no exact float representation");
-  }
-
-  @Test
-  public void usingExactEquality_contains_otherTypes_negativeLongOutOfRange() {
-    long expected = -(1L << 24) - 1L;
-    float[] actual = array(1.0f, 2.0f, 3.0f);
-    AssertionError e =
-        expectFailure(
-            whenTesting -> whenTesting.that(actual).usingExactEquality().contains(expected));
-    assertThat(e)
-        .factValue("first exception")
-        .startsWith(
-            "compare("
-                + actual[0]
-                + ", "
-                + expected
-                + ") threw java.lang.IllegalArgumentException");
-    assertThat(e)
-        .factValue("first exception")
-        .contains(
-            "Expected value "
-                + expected
-                + " in assertion using exact float equality was a long with an absolute value "
-                + "greater than 2^24 which has no exact float representation");
   }
 }
